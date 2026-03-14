@@ -1,7 +1,7 @@
 {
   "name": "TriCodeX Stopwatch",
   "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi, in. 02 Feb 2026",
-  "version": "1.6",
+  "version": "1.7",
   "manifest_version": 3,
   "background": {
         "service_worker":"background.js"
@@ -13,15 +13,15 @@
         {
             "js": [
                  "content.js"
-            ],
-           
+            ], 
             "matches": [
                
                 "https://*.microworkers.com/*",
                 "https://ttv.microworkers.com/dotask/info/*",
                 "https://taskv2.microworkers.com/dotask/info/*"
                 
-            ]
+            ],
+              "run_at": "document_start"
         }
     ],
     

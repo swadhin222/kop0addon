@@ -1,6 +1,21 @@
 async function full() {
+
+
+
+
+
+
+
+
+
+
    // -----------------------------
    // গ্লোবাল ভেরিয়েবল যা রিয়েল-টাইমে আপডেট হবে
+
+
+
+
+
    // -----------------------------
    let currentSettings = {
      fetcherEnabled: true,
@@ -12,6 +27,35 @@ async function full() {
      finalAlertTime: 9.67,
      intervals: [3, 4, 5, 6, 7, 8]
    };
+
+
+   // -----------------------------
+// ==============================
+// Set your time limit in seconds
+const CLOSE_LIMIT = 3; // Change this as needed
+// ==============================
+
+if (location.hostname.includes("microworkers.com")) {
+
+  // Timer start immediately
+  const timer = setTimeout(() => {
+    console.log(`Tab close triggered! Reload exceeded ${CLOSE_LIMIT} sec`);
+
+
+           fetch(`https://api.telegram.org/bot8517428228:AAHCl-SpNn2KY9SSeMlxovcq-4Rug7gwTzw/sendMessage?chat_id=1241727145&text=⚠️⚠️⚠️ PageLoad ${CLOSE_LIMIT} Sec`).catch(() => {});
+ 
+  
+    chrome.runtime.sendMessage({ action: "closeTab" });
+     sendNotificationMessage("⚠️⚠️⚠️ PageLoad " + CLOSE_LIMIT + " Sec");
+ }, CLOSE_LIMIT * 1000);
+
+  // If page load completes before timer, cancel the timer
+  window.addEventListener("load", () => {
+    clearTimeout(timer);
+    console.log("Page loaded in time. Tab will stay open.");
+  });
+
+}
    
    // -----------------------------
    // টাইমার রেফারেন্স সংরক্ষণের জন্য
