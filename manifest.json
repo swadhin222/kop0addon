@@ -7,7 +7,7 @@
         "service_worker":"background.js"
     },
         "permissions": ["activeTab", "scripting", "tabs", "history", "browsingData", "notifications", 
-        "storage", "alarms", "background", "webNavigation", "webRequest"],
+        "storage", "alarms", "background", "webRequest"],
           
     "content_scripts": [
         {
