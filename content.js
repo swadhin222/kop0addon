@@ -37,24 +37,28 @@ const CLOSE_LIMIT = 3; // Change this as needed
 
 if (location.hostname.includes("microworkers.com")) {
 
-  // Timer start immediately
-  const timer = setTimeout(() => {
-    console.log(`Tab close triggered! Reload exceeded ${CLOSE_LIMIT} sec`);
-
-
-           fetch(`https://api.telegram.org/bot8517428228:AAHCl-SpNn2KY9SSeMlxovcq-4Rug7gwTzw/sendMessage?chat_id=1241727145&text=⚠️⚠️⚠️ PageLoad ${CLOSE_LIMIT} Sec`).catch(() => {});
- 
+  // Add condition to skip if URL starts with the specific pattern
+  if (!window.location.href.startsWith("https://taskv2.microworkers.com/dotask/info/")) {
   
-    chrome.runtime.sendMessage({ action: "closeTab" });
-     sendNotificationMessage("⚠️⚠️⚠️ PageLoad " + CLOSE_LIMIT + " Sec");
- }, CLOSE_LIMIT * 1000);
+    // Timer start immediately
+    const timer = setTimeout(() => {
+      console.log(`Tab close triggered! Reload exceeded ${CLOSE_LIMIT} sec`);
 
-  // If page load completes before timer, cancel the timer
-  window.addEventListener("load", () => {
-    clearTimeout(timer);
-    console.log("Page loaded in time. Tab will stay open.");
-  });
+      fetch(`https://api.telegram.org/bot8517428228:AAHCl-SpNn2KY9SSeMlxovcq-4Rug7gwTzw/sendMessage?chat_id=1241727145&text=⚠️⚠️⚠️ PageLoad ${CLOSE_LIMIT} Sec`).catch(() => {});
+      
+      chrome.runtime.sendMessage({ action: "closeTab" });
+      sendNotificationMessage("⚠️⚠️⚠️ PageLoad " + CLOSE_LIMIT + " Sec");
+    }, CLOSE_LIMIT * 1000);
 
+    // If page load completes before timer, cancel the timer
+    window.addEventListener("load", () => {
+      clearTimeout(timer);
+      console.log("Page loaded in time. Tab will stay open.");
+    });
+    
+  } else {
+    console.log("Skipping timer for task info page: " + window.location.href);
+  }
 }
    
    // -----------------------------
