@@ -32,7 +32,7 @@ async function full() {
    // -----------------------------
 // ==============================
 // Set your time limit in seconds
-const CLOSE_LIMIT = 3; // Change this as needed
+const CLOSE_LIMIT = 9; // Change this as needed
 // ==============================
 
 if (location.hostname.includes("microworkers.com")) {
@@ -302,7 +302,7 @@ async function performFinalAction() {
      
      Object.assign(timerDiv.style, {
        position: "fixed",
-       top: "10px",
+       top: "220px",
        right: "10px",
        backgroundColor: "#1e293b",
        color: "#facc15",
@@ -456,105 +456,105 @@ async function performFinalAction() {
        }
      }
      
-     // Task page
-     if (location.href.startsWith("https://taskv2.microworkers.com/dotask/info/")) {
-       
-       const startTime = getTaskStartTime();
-       
-       createCountdownTimer();
-       
-       timerReferences.countdownInterval = setInterval(() => {
-         updateTimerDisplay(startTime);
-       }, 1000);
-       
-       resetTimersWithNewSettings(startTime);
-       
-       setupStorageListener(startTime);
-       
-       // Cancel function
-       window.cancelFinalAlert = () => {
-         clearAllTimers();
-         if (timerReferences.countdownInterval) {
-           clearInterval(timerReferences.countdownInterval);
-         }
-         clearTaskStartTime();
-         
-         const cancelMsg = `${currentSettings.name}: ❌ Final alert cancelled by user`;
-         sendTelegram(cancelMsg, currentSettings.botToken, currentSettings.chatId);
-         sendNotificationMessage(cancelMsg);
-         
-         const timerDiv = document.getElementById("rec-countdown-timer");
-         if (timerDiv) timerDiv.remove();
-       };
-       
-       // Cancel button
-       function addCancelButton() {
-         if (document.getElementById("cancel-final-alert-btn")) return;
-         const header = document.querySelector(".mw-task-header");
-         if (!header) return console.warn("❗ .mw-task-header not found!");
+// Task page
+if (location.href.startsWith("https://taskv2.microworkers.com/dotask/info/")) {
 
-         const btn = document.createElement("button");
-         btn.id = "cancel-final-alert-btn";
-         btn.type = "button";
-         btn.innerText = "Cancel Alert";
+  const startTime = getTaskStartTime();
 
-         Object.assign(btn.style, {
-           marginLeft: "10px",
-           padding: "9px",
-           background: "#f87171",
-           color: "#fff",
-           border: "none",
-           borderRadius: "8px",
-           cursor: "pointer",
-           fontSize: "13px",
-           fontWeight: "600",
-           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-           transition: "all 0.2s ease",
-         });
+  createCountdownTimer();
 
-         btn.addEventListener("mouseenter", () => {
-           btn.style.background = "#ef4444";
-           btn.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
-           btn.style.transform = "translateY(-1px)";
-         });
-         
-         btn.addEventListener("mouseleave", () => {
-           btn.style.background = "#f87171";
-           btn.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-           btn.style.transform = "translateY(0)";
-         });
+  timerReferences.countdownInterval = setInterval(() => {
+    updateTimerDisplay(startTime);
+  }, 1000);
 
-         btn.addEventListener("click", (e) => {
-           e.preventDefault();
-           e.stopPropagation();
-           if (typeof window.cancelFinalAlert === "function") {
-             window.cancelFinalAlert();
-           }
-         });
+  resetTimersWithNewSettings(startTime);
 
-         header.appendChild(btn);
-       }
+  setupStorageListener(startTime);
 
-       const observer = new MutationObserver(() => {
-         const header = document.querySelector(".mw-task-header");
-         if (header) {
-           addCancelButton();
-           observer.disconnect();
-         }
-       });
-       observer.observe(document.body, { childList: true, subtree: true });
+  // 🔴 Cancel function
+  window.cancelFinalAlert = () => {
+    clearAllTimers();
 
-       addCancelButton();
-     }
+    if (timerReferences.countdownInterval) {
+      clearInterval(timerReferences.countdownInterval);
+    }
 
+    clearTaskStartTime();
 
+    const cancelMsg = `${currentSettings.name}: ❌ Final alert cancelled by user`;
 
-  var nono = document.getElementsByClassName('mw-btn danger')[0]?.innerText;
-  if (nono ==' Skip this task') {
-    fetch(`https://api.telegram.org/bot${currentSettings.botToken}/sendMessage?chat_id=${currentSettings.chatId}&text=[${currentSettings.name}] A Task is accepted`).catch(() => {});
+    sendTelegram(cancelMsg, currentSettings.botToken, currentSettings.chatId);
+    sendNotificationMessage(cancelMsg);
+
+    // remove timer UI
+    const timerDiv = document.getElementById("rec-countdown-timer");
+    if (timerDiv) timerDiv.remove();
+
+    // remove button
+    const btn = document.getElementById("cancel-final-alert-btn");
+    if (btn) btn.remove();
+  };
+
+  // 🔵 Floating Cancel Button (Bottom Right)
+  function addCancelButton() {
+    if (document.getElementById("cancel-final-alert-btn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "cancel-final-alert-btn";
+    btn.type = "button";
+    btn.innerText = "Cancel Alert";
+
+    Object.assign(btn.style, {
+      position: "fixed",
+      bottom: "325px",
+      right: "10px",
+      zIndex: "99999",
+      padding: "10px 14px",
+      background: "#f87171",
+      color: "#fff",
+      border: "none",
+      borderRadius: "10px",
+      cursor: "pointer",
+      fontSize: "13px",
+      fontWeight: "600",
+      boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+      transition: "all 0.2s ease",
+    });
+
+    // hover effect
+    btn.addEventListener("mouseenter", () => {
+      btn.style.background = "#ef4444";
+      btn.style.transform = "translateY(-2px)";
+    });
+
+    btn.addEventListener("mouseleave", () => {
+      btn.style.background = "#f87171";
+      btn.style.transform = "translateY(0)";
+    });
+
+    // click
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (typeof window.cancelFinalAlert === "function") {
+        window.cancelFinalAlert();
+      }
+    });
+
+    document.body.appendChild(btn);
   }
 
+  // 🚀 Run button
+  addCancelButton();
+}
 
+
+
+  var nonos = document.getElementsByClassName('mw-btn danger')[0]?.innerText;
+  if (nonos ==' Skip this task') {
+    fetch(`https://api.telegram.org/bot${currentSettings.botToken}/sendMessage?chat_id=${currentSettings.chatId}&text=[${currentSettings.name}] A Task is accepted`).catch(() => {});
+  }
 
 
 
