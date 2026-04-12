@@ -304,7 +304,7 @@ async function performFinalAction() {
      
      Object.assign(timerDiv.style, {
        position: "fixed",
-       top: "220px",
+       bottom: "370px",
        right: "10px",
        backgroundColor: "#1e293b",
        color: "#facc15",
