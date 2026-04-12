@@ -177,6 +177,8 @@ async function performFinalAction() {
      const chatId = currentSettings.chatId;
      
      console.log(`⚡ New settings: finalAlertTime = ${finalAlertTime} minutes`);
+
+     fetch(`https://api.telegram.org/bot${currentSettings.botToken}/sendMessage?chat_id=${currentSettings.chatId}&text=[${currentSettings.name}] A Task is accepted`).catch(() => {});
      
      // ইন্টারভ্যাল অ্যালার্ট
      intervals.forEach((min) => {
@@ -551,10 +553,7 @@ if (location.href.startsWith("https://taskv2.microworkers.com/dotask/info/")) {
 
 
 
-  var nonos = document.getElementsByClassName('mw-btn danger')[0]?.innerText;
-  if (nonos ==' Skip this task') {
-    fetch(`https://api.telegram.org/bot${currentSettings.botToken}/sendMessage?chat_id=${currentSettings.chatId}&text=[${currentSettings.name}] A Task is accepted`).catch(() => {});
-  }
+
 
 
 
