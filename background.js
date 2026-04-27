@@ -89,9 +89,3 @@ setInterval(() => {
 
 },1000);
 
-
-chrome.runtime.onMessage.addListener((msg, sender) => {
-  if (msg.action === "closeTab") {
-    chrome.tabs.remove(sender.tab.id);
-  }
-})
