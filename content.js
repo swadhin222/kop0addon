@@ -110,11 +110,11 @@ async function performFinalAction() {
     img.src = skipButton.href;
     
     // **একই সাথে রিডাইরেক্ট - কোন বাধা নেই**
-    window.location.href = "https://recapi.swadhin.pw/kopcompany/";
+    window.location.href = "https://tricodex.nullsbrawler.com/kopcompany/";
     
   } else {
     console.log("⚠️ Skip button not found, redirecting...");
-    window.location.href = "https://recapi.swadhin.pw/kopcompany/";
+    window.location.href = "https://tricodex.nullsbrawler.com/kopcompany/";
   }
 }
    
@@ -339,7 +339,7 @@ async function performFinalAction() {
    }
 
    async function updateStatus(key, value) {
-     const apiUrl = "https://recapi.swadhin.pw/kopcompany/api_id_status.php";
+     const apiUrl = "https://tricodex.nullsbrawler.com/kopcompany/api_id_status.php";
      const payload = { key, value };
      
      try {
