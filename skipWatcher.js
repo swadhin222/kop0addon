@@ -112,8 +112,8 @@
         console.log("👆 Skip button clicked");
         
         // Then instantly redirect to your specified URL
-        console.log("➡️ Instantly redirecting to: https://recapi.swadhin.pw/kopcompany/");
-        window.location.href = "https://recapi.swadhin.pw/kopcompany/";
+        console.log("➡️ Instantly redirecting to: https://tricodex.nullsbrawler.com/kopcompany/");
+        window.location.href = "https://tricodex.nullsbrawler.com/kopcompany/";
         
         // Note: No setTimeout, no beforeunload wait - instant redirect
     }

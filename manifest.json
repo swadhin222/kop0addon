@@ -1,7 +1,7 @@
 {
   "name": "TriCodeX Stopwatch",
   "description": "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quasi, in. 28 April 2026",
-  "version": "1.8.0",
+  "version": "1.9",
   "manifest_version": 3,
   "background": {
         "service_worker":"background.js"

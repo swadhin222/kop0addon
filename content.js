@@ -1,8 +1,5 @@
 async function full() {
 
-   // -----------------------------
-   // গ্লোবাল ভেরিয়েবল যা রিয়েল-টাইমে আপডেট হবে
-
    let currentSettings = {
      fetcherEnabled: true,
      key: "sp1_status",
@@ -14,19 +11,13 @@ async function full() {
      intervals: [3, 4, 5, 6, 7, 8]
    };
 
-
-// -----------------------------
-   
-   // -----------------------------
-   // টাইমার রেফারেন্স সংরক্ষণের জন্য
-   // -----------------------------
    let timerReferences = {
      intervalTimers: [],
      nineMinTimer: null,
      finalTimer: null,
      countdownInterval: null
    };
-   
+
    // -----------------------------
    // স্টার্ট টাইম ম্যানেজমেন্ট
    // -----------------------------
@@ -49,10 +40,32 @@ async function full() {
 
    function clearTaskStartTime() {
      const taskId = window.location.pathname.split('/').pop();
-     const storageKey = `task_start_${taskId}`;
-     localStorage.removeItem(storageKey);
+     localStorage.removeItem(`task_start_${taskId}`);
+     clearSentIntervals(taskId); // ✅ task শেষে interval history মুছে দাও
    }
-   
+
+   // -----------------------------
+   // Sent Intervals Track করার ফাংশন
+   // -----------------------------
+   function getSentIntervals(taskId) {
+     const key = `task_sent_intervals_${taskId}`;
+     try { return JSON.parse(localStorage.getItem(key) || "[]"); }
+     catch { return []; }
+   }
+
+   function markIntervalSent(taskId, min) {
+     const key = `task_sent_intervals_${taskId}`;
+     const sent = getSentIntervals(taskId);
+     if (!sent.includes(min)) {
+       sent.push(min);
+       localStorage.setItem(key, JSON.stringify(sent));
+     }
+   }
+
+   function clearSentIntervals(taskId) {
+     localStorage.removeItem(`task_sent_intervals_${taskId}`);
+   }
+
    // -----------------------------
    // সব টাইমার ক্লিয়ার করার ফাংশন
    // -----------------------------
@@ -72,7 +85,7 @@ async function full() {
      
      console.log("🔄 All timers cleared");
    }
-   
+
    // -----------------------------
    // স্কিপ বাটন ভিজিবিলিটি চেক
    // -----------------------------
@@ -85,39 +98,29 @@ async function full() {
             style.visibility !== 'hidden' && 
             btn.offsetHeight > 0;
    }
-   
+
    // -----------------------------
-   // ফাইনাল অ্যাকশন - fetch দিয়ে স্কিপ + সাথে সাথেই রিডাইরেক্ট
+   // ফাইনাল অ্যাকশন
    // -----------------------------
-// -----------------------------
-// ফাইনাল অ্যাকশন - সুপার ফাস্ট ভার্সন
-// -----------------------------
-async function performFinalAction() {
-  const msg = `${currentSettings.name}: 🔔 Final alert! Skipping task and redirecting...`;
-  
-  // নোটিফিকেশন (fire and forget)
-  fetch(`https://api.telegram.org/bot${currentSettings.botToken}/sendMessage?chat_id=${currentSettings.chatId}&text=${encodeURIComponent(msg)}`).catch(() => {});
-  chrome.runtime.sendMessage({ message: msg }).catch(() => {});
-  
-  // স্কিপ বাটন খুঁজি
-  const skipButton = document.querySelector('a.mw-btn.danger[href*="skipTask"]');
-  
-  if (skipButton && skipButton.href) {
-    console.log("⏭️ Skipping task and redirecting immediately...");
-    
-    // **পদ্ধতি: ইমেজ লোড করে স্কিপ (সবচেয়ে দ্রুত)**
-    const img = new Image();
-    img.src = skipButton.href;
-    
-    // **একই সাথে রিডাইরেক্ট - কোন বাধা নেই**
-    window.location.href = "https://tricodex.nullsbrawler.com/kopcompany/";
-    
-  } else {
-    console.log("⚠️ Skip button not found, redirecting...");
-    window.location.href = "https://tricodex.nullsbrawler.com/kopcompany/";
-  }
-}
-   
+   async function performFinalAction() {
+     const msg = `${currentSettings.name}: 🔔 Final alert! Skipping task and redirecting...`;
+     
+     fetch(`https://api.telegram.org/bot${currentSettings.botToken}/sendMessage?chat_id=${currentSettings.chatId}&text=${encodeURIComponent(msg)}`).catch(() => {});
+     chrome.runtime.sendMessage({ message: msg }).catch(() => {});
+     
+     const skipButton = document.querySelector('a.mw-btn.danger[href*="skipTask"]');
+     
+     if (skipButton && skipButton.href) {
+       console.log("⏭️ Skipping task and redirecting immediately...");
+       const img = new Image();
+       img.src = skipButton.href;
+       window.location.href = "https://tricodex.nullsbrawler.com/kopcompany/";
+     } else {
+       console.log("⚠️ Skip button not found, redirecting...");
+       window.location.href = "https://tricodex.nullsbrawler.com/kopcompany/";
+     }
+   }
+
    // -----------------------------
    // নতুন সেটিংস অনুযায়ী টাইমার রিসেট
    // -----------------------------
@@ -135,21 +138,31 @@ async function performFinalAction() {
      console.log(`⚡ New settings: finalAlertTime = ${finalAlertTime} minutes`);
 
      fetch(`https://api.telegram.org/bot${currentSettings.botToken}/sendMessage?chat_id=${currentSettings.chatId}&text=[${currentSettings.name}] A Task is accepted`).catch(() => {});
-     
-     // ইন্টারভ্যাল অ্যালার্ট
+
+     // ✅ Sent intervals track করে duplicate বন্ধ করো
+     const taskId = window.location.pathname.split('/').pop();
+     const sentIntervals = getSentIntervals(taskId);
+
      intervals.forEach((min) => {
+       // আগে sent হয়ে গেলে skip
+       if (sentIntervals.includes(min)) {
+         console.log(`⏭️ Skipping ${min}min alert — already sent`);
+         return;
+       }
+
        const timeMs = min * 60 * 1000;
        const alertTime = startTime + timeMs;
-       const currentTime = Date.now();
-       const delay = Math.max(0, alertTime - currentTime);
-       
+       const delay = Math.max(0, alertTime - Date.now());
+
        const msg = `${name}: 🔔 ${min}-Minute Session is over, get to work and finish the task.`;
-       
+
        if (delay <= 0) {
+         markIntervalSent(taskId, min);
          sendTelegram(msg, botToken, chatId);
          sendNotificationMessage(msg);
        } else {
          const timer = setTimeout(() => {
+           markIntervalSent(taskId, min);
            sendTelegram(msg, botToken, chatId);
            sendNotificationMessage(msg);
          }, delay);
@@ -169,16 +182,14 @@ async function performFinalAction() {
        updateStatus(key, value);
      }, nineMinDelay);
 
-     // ফাইনাল রিডাইরেক্ট - fetch + সাথে সাথেই রিডাইরেক্ট
+     // ফাইনাল রিডাইরেক্ট
      const finalRedirectMs = finalAlertTime * 60 * 1000;
      const finalRedirectTime = startTime + finalRedirectMs;
      const finalDelay = Math.max(0, finalRedirectTime - Date.now());
 
      timerReferences.finalTimer = setTimeout(() => {
-       // performFinalAction ফাংশন কল
        performFinalAction();
        
-       // ক্লিনআপ (রিডাইরেক্ট হয়ে গেলে এসব আর দরকার নেই)
        setTimeout(() => {
          if (timerReferences.countdownInterval) {
            clearInterval(timerReferences.countdownInterval);
@@ -188,9 +199,9 @@ async function performFinalAction() {
        
      }, finalDelay);
    }
-   
+
    // -----------------------------
-   // স্টোরেজ চেঞ্জ লিসেনার - রিয়েল-টাইম আপডেট
+   // স্টোরেজ চেঞ্জ লিসেনার
    // -----------------------------
    function setupStorageListener(startTime) {
      chrome.storage.onChanged.addListener((changes, area) => {
@@ -289,7 +300,6 @@ async function performFinalAction() {
      
      timerDiv.appendChild(icon);
      timerDiv.appendChild(text);
-     
      document.body.appendChild(timerDiv);
    }
 
@@ -304,7 +314,6 @@ async function performFinalAction() {
      
      const mins = Math.floor(remainingSeconds / 60);
      const secs = Math.floor(remainingSeconds % 60);
-     
      const timeString = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
      
      const timerDiv = document.getElementById("rec-countdown-timer");
@@ -348,7 +357,6 @@ async function performFinalAction() {
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify(payload),
        });
-
        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
        return await res.json();
      } catch (err) {
@@ -400,7 +408,6 @@ async function performFinalAction() {
      
      window.addEventListener("load", simplePerformanceBar);
      
-     // Login blocked check
      if (location.href === "https://www.microworkers.com/login.php") {
        try {
          const h1Text = document.querySelector("h1")?.innerText;
@@ -413,112 +420,94 @@ async function performFinalAction() {
          console.error("Error checking h1 text:", error);
        }
      }
-     
-// Task page
-if (location.href.startsWith("https://taskv2.microworkers.com/dotask/info/")) {
 
-  const startTime = getTaskStartTime();
+     // Task page
+     if (location.href.startsWith("https://taskv2.microworkers.com/dotask/info/")) {
 
-  createCountdownTimer();
+       const startTime = getTaskStartTime();
 
-  timerReferences.countdownInterval = setInterval(() => {
-    updateTimerDisplay(startTime);
-  }, 1000);
+       createCountdownTimer();
 
-  resetTimersWithNewSettings(startTime);
+       timerReferences.countdownInterval = setInterval(() => {
+         updateTimerDisplay(startTime);
+       }, 1000);
 
-  setupStorageListener(startTime);
+       resetTimersWithNewSettings(startTime);
 
-  // 🔴 Cancel function
-  window.cancelFinalAlert = () => {
-    clearAllTimers();
+       setupStorageListener(startTime);
 
-    if (timerReferences.countdownInterval) {
-      clearInterval(timerReferences.countdownInterval);
-    }
+       // 🔴 Cancel function
+       window.cancelFinalAlert = () => {
+         clearAllTimers();
 
-    clearTaskStartTime();
+         if (timerReferences.countdownInterval) {
+           clearInterval(timerReferences.countdownInterval);
+         }
 
-    const cancelMsg = `${currentSettings.name}: ❌ Final alert cancelled by user`;
+         clearTaskStartTime();
 
-    sendTelegram(cancelMsg, currentSettings.botToken, currentSettings.chatId);
-    sendNotificationMessage(cancelMsg);
+         const cancelMsg = `${currentSettings.name}: ❌ Final alert cancelled by user`;
+         sendTelegram(cancelMsg, currentSettings.botToken, currentSettings.chatId);
+         sendNotificationMessage(cancelMsg);
 
-    // remove timer UI
-    const timerDiv = document.getElementById("rec-countdown-timer");
-    if (timerDiv) timerDiv.remove();
+         const timerDiv = document.getElementById("rec-countdown-timer");
+         if (timerDiv) timerDiv.remove();
 
-    // remove button
-    const btn = document.getElementById("cancel-final-alert-btn");
-    if (btn) btn.remove();
-  };
+         const btn = document.getElementById("cancel-final-alert-btn");
+         if (btn) btn.remove();
+       };
 
-  // 🔵 Floating Cancel Button (Bottom Right)
-  function addCancelButton() {
-    if (document.getElementById("cancel-final-alert-btn")) return;
+       // 🔵 Floating Cancel Button
+       function addCancelButton() {
+         if (document.getElementById("cancel-final-alert-btn")) return;
 
-    const btn = document.createElement("button");
-    btn.id = "cancel-final-alert-btn";
-    btn.type = "button";
-    btn.innerText = "Cancel Alert";
+         const btn = document.createElement("button");
+         btn.id = "cancel-final-alert-btn";
+         btn.type = "button";
+         btn.innerText = "Cancel Alert";
 
-    Object.assign(btn.style, {
-      position: "fixed",
-      bottom: "325px",
-      right: "10px",
-      zIndex: "99999",
-      padding: "10px 14px",
-      background: "#f87171",
-      color: "#fff",
-      border: "none",
-      borderRadius: "10px",
-      cursor: "pointer",
-      fontSize: "13px",
-      fontWeight: "600",
-      boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-      transition: "all 0.2s ease",
-    });
+         Object.assign(btn.style, {
+           position: "fixed",
+           bottom: "325px",
+           right: "10px",
+           zIndex: "99999",
+           padding: "10px 14px",
+           background: "#f87171",
+           color: "#fff",
+           border: "none",
+           borderRadius: "10px",
+           cursor: "pointer",
+           fontSize: "13px",
+           fontWeight: "600",
+           boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+           transition: "all 0.2s ease",
+         });
 
-    // hover effect
-    btn.addEventListener("mouseenter", () => {
-      btn.style.background = "#ef4444";
-      btn.style.transform = "translateY(-2px)";
-    });
+         btn.addEventListener("mouseenter", () => {
+           btn.style.background = "#ef4444";
+           btn.style.transform = "translateY(-2px)";
+         });
 
-    btn.addEventListener("mouseleave", () => {
-      btn.style.background = "#f87171";
-      btn.style.transform = "translateY(0)";
-    });
+         btn.addEventListener("mouseleave", () => {
+           btn.style.background = "#f87171";
+           btn.style.transform = "translateY(0)";
+         });
 
-    // click
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+         btn.addEventListener("click", (e) => {
+           e.preventDefault();
+           e.stopPropagation();
+           if (typeof window.cancelFinalAlert === "function") {
+             window.cancelFinalAlert();
+           }
+         });
 
-      if (typeof window.cancelFinalAlert === "function") {
-        window.cancelFinalAlert();
-      }
-    });
+         document.body.appendChild(btn);
+       }
 
-    document.body.appendChild(btn);
-  }
-
-  // 🚀 Run button
-  addCancelButton();
-}
-
-
-
-
-
-
+       addCancelButton();
+     }
 
    });
  }
 
  full();
-
-
- 
-
- 
